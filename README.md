@@ -1,1 +1,2 @@
-# CS433-ml-project_2-RoadSegmentation
+# Project 2 - Road Segmentation
+## Team: OGP_team
