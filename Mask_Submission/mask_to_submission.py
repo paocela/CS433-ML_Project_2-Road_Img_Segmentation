@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 import os
 import numpy as np
 import matplotlib.image as mpimg
@@ -28,7 +26,7 @@ def mask_to_submission_strings(image_filename):
             yield("{:03d}_{}_{},{}".format(img_number, j, i, label))
 
 
-def masks_to_submission(submission_filename, *image_filenames):
+def masks_to_submission_outer(submission_filename, *image_filenames):
     """Converts images into a submission file"""
     with open(submission_filename, 'w') as f:
         f.write('id,prediction\n')
@@ -36,11 +34,11 @@ def masks_to_submission(submission_filename, *image_filenames):
             f.writelines('{}\n'.format(s) for s in mask_to_submission_strings(fn))
 
 
-if __name__ == '__main__':
-    submission_filename = 'dummy_submission.csv'
+def mask_to_submission(submission_filename, image_filename_prefix):
     image_filenames = []
     for i in range(1, 51):
-        image_filename = 'training/groundtruth/satImage_' + '%.3d' % i + '.png'
-        print image_filename
+        image_filename = image_filename_prefix + 'prediction_' + '%d' % i + '.png'
+        print(image_filename)
         image_filenames.append(image_filename)
-    masks_to_submission(submission_filename, *image_filenames)
+    masks_to_submission_outer(submission_filename, *image_filenames)
+    print("Submission file created")

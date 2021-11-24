@@ -20,17 +20,19 @@ import code
 import tensorflow.python.platform
 
 import numpy
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
+tf.compat.v1.disable_eager_execution()
 
 NUM_CHANNELS = 3  # RGB images
 PIXEL_DEPTH = 255
 NUM_LABELS = 2
-TRAINING_SIZE = 20
+TRAINING_SIZE = 100
 VALIDATION_SIZE = 5  # Size of the validation set.
+TEST_SIZE = 50
 SEED = 66478  # Set to None for random seed.
-BATCH_SIZE = 16  # 64
+BATCH_SIZE = 16 # 16  # 64
 NUM_EPOCHS = 100
-RESTORE_MODEL = False  # If True, restore existing model instead of training a new one
+RESTORE_MODEL = True  # If True, restore existing model instead of training a new one
 RECORDING_STEP = 0
 
 # Set image patch size in pixels
@@ -38,7 +40,7 @@ RECORDING_STEP = 0
 # image size should be an integer multiple of this number!
 IMG_PATCH_SIZE = 16
 
-tf.app.flags.DEFINE_string('train_dir', '/tmp/segment_aerial_images',
+tf.app.flags.DEFINE_string('train_dir', '/content/gdrive/My Drive/ml-project-2-ogpteam2/Data/training',
                            """Directory where to write event logs """
                            """and checkpoint.""")
 FLAGS = tf.app.flags.FLAGS
@@ -180,7 +182,7 @@ def concatenate_images(img, gt_img):
         gt_img_3c[:, :, 2] = gt_img8
         img8 = img_float_to_uint8(img)
         cimg = numpy.concatenate((img8, gt_img_3c), axis=1)
-    return cimg
+    return gt_img_3c
 
 
 def make_img_overlay(img, predicted_img):
@@ -198,9 +200,10 @@ def make_img_overlay(img, predicted_img):
 
 def main(argv=None):  # pylint: disable=unused-argument
 
-    data_dir = 'training/'
-    train_data_filename = data_dir + 'images/'
-    train_labels_filename = data_dir + 'groundtruth/' 
+    train_data_dir = 'Data/training/'
+    test_data_dir = 'Data/test_set_images/'
+    train_data_filename = train_data_dir + 'images/'
+    train_labels_filename = train_data_dir + 'groundtruth/' 
 
     # Extract it into numpy arrays.
     train_data = extract_data(train_data_filename, TRAINING_SIZE)
@@ -217,6 +220,7 @@ def main(argv=None):  # pylint: disable=unused-argument
             c1 = c1 + 1
     print('Number of data points per class: c0 = ' + str(c0) + ' c1 = ' + str(c1))
 
+    # under-sampling
     print('Balancing training data...')
     min_c = min(c0, c1)
     idx0 = [i for i, j in enumerate(train_labels) if j[0] == 1]
@@ -308,21 +312,28 @@ def main(argv=None):  # pylint: disable=unused-argument
 
     # Get a concatenation of the prediction and groundtruth for given input file
     def get_prediction_with_groundtruth(filename, image_idx):
-
-        imageid = "satImage_%.3d" % image_idx
-        image_filename = filename + imageid + ".png"
+        test_folder = "test_%d/" % image_idx
+        imageid = "test_%d" % image_idx
+        # imageid = "satImage_%.3d" % image_idx
+        # image_filename = filename + imageid + ".png"
+        image_filename = filename + test_folder + imageid + ".png"
         img = mpimg.imread(image_filename)
 
         img_prediction = get_prediction(img)
         cimg = concatenate_images(img, img_prediction)
 
         return cimg
+        #return img_prediction
+
 
     # Get prediction overlaid on the original image for given input file
     def get_prediction_with_overlay(filename, image_idx):
 
-        imageid = "satImage_%.3d" % image_idx
-        image_filename = filename + imageid + ".png"
+        test_folder = "test_%d/" % image_idx
+        imageid = "test_%d" % image_idx
+        # imageid = "satImage_%.3d" % image_idx
+        # image_filename = filename + imageid + ".png"
+        image_filename = filename + test_folder + imageid + ".png"
         img = mpimg.imread(image_filename)
 
         img_prediction = get_prediction(img)
@@ -470,7 +481,7 @@ def main(argv=None):  # pylint: disable=unused-argument
 
             training_indices = range(train_size)
 
-            for iepoch in range(num_epochs):
+            for iepoch in range(num_epochs): # num_epochs
 
                 # Permute training indices
                 perm_indices = numpy.random.permutation(training_indices)
@@ -514,14 +525,15 @@ def main(argv=None):  # pylint: disable=unused-argument
                 save_path = saver.save(s, FLAGS.train_dir + "/model.ckpt")
                 print("Model saved in file: %s" % save_path)
 
-        print("Running prediction on training set")
-        prediction_training_dir = "predictions_training/"
+        print("Running prediction on test set")
+        prediction_training_dir = "predictions_test/"
         if not os.path.isdir(prediction_training_dir):
             os.mkdir(prediction_training_dir)
-        for i in range(1, TRAINING_SIZE + 1):
-            pimg = get_prediction_with_groundtruth(train_data_filename, i)
-            Image.fromarray(pimg).save(prediction_training_dir + "prediction_" + str(i) + ".png")
-            oimg = get_prediction_with_overlay(train_data_filename, i)
+        for i in range(1, TEST_SIZE + 1):
+            pimg = Image.fromarray(get_prediction_with_groundtruth(test_data_dir, i))
+            
+            pimg.save(prediction_training_dir + "prediction_" + str(i) + ".png")
+            oimg = get_prediction_with_overlay(test_data_dir, i)
             oimg.save(prediction_training_dir + "overlay_" + str(i) + ".png")       
 
 
