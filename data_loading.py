@@ -17,22 +17,28 @@ def value_to_class(v):
     else:  # bgrd
         return [1, 0]
 
+# load images from filename
+def load_images(filename, num_images):
+  imgs = []
+  for i in range(1, num_images+1):
+      imageid = "satImage_%.3d" % i
+      image_filename = filename + imageid + ".png"
+      if os.path.isfile(image_filename):
+          print('Loading ' + image_filename)
+          img = mpimg.imread(image_filename)
+          imgs.append(img)
+      else:
+          print('File ' + image_filename + ' does not exist')
+  return imgs
+
 # Extract data images
 def extract_data(filename, num_images):
     """Extract the images into a 4D tensor [image index, y, x, channels].
     Values are rescaled from [0, 255] down to [-0.5, 0.5].
     Result shape = (12500, 16, 16, 3)
     """
-    imgs = []
-    for i in range(1, num_images+1):
-        imageid = "satImage_%.3d" % i
-        image_filename = filename + imageid + ".png"
-        if os.path.isfile(image_filename):
-            print('Loading ' + image_filename)
-            img = mpimg.imread(image_filename)
-            imgs.append(img)
-        else:
-            print('File ' + image_filename + ' does not exist')
+    # load images
+    imgs = load_images(filename, num_images)
 
     num_images = len(imgs)
     IMG_WIDTH = imgs[0].shape[0]
@@ -49,16 +55,8 @@ def extract_labels(filename, num_images):
     """Extract the labels into a 1-hot matrix [image index, label index].
     Result shape = (12500, 2)
     """
-    gt_imgs = []
-    for i in range(1, num_images + 1):
-        imageid = "satImage_%.3d" % i
-        image_filename = filename + imageid + ".png"
-        if os.path.isfile(image_filename):
-            print('Loading ' + image_filename)
-            img = mpimg.imread(image_filename)
-            gt_imgs.append(img)
-        else:
-            print('File ' + image_filename + ' does not exist')
+    # load gound-truth images
+    gt_imgs = load_images(filename, num_images)
 
     num_images = len(gt_imgs)
     gt_patches = [img_crop(gt_imgs[i], IMG_PATCH_SIZE, IMG_PATCH_SIZE) for i in range(num_images)]
