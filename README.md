@@ -14,25 +14,33 @@ Image semantic segmentation is the process of assigning a label to each pixel in
 ## Setup and run
 To get a hold of the dataset download the files test_set_images.zip and training.zip [HERE](https://drive.google.com/drive/folders/18yEsYBXJWcZhCC3L9hM5ipafgEFkkDxM). Unzip the folders, and place them in a folder 'data'.
 
-Before running the file, make sure to install the packages below. 
+Before running the file, make sure to install the packages below. <br>
+- os
+- matplotlib
+- cv2
+- os 
+- re
+- skimage
+- tqdm
+- torch
+- torchvision
+- tensorflow as tf
+- keras
+- keras.backend as K
+- sys
 
-import os
-import matplotlib.image as mpimg
-import cv2
-import os 
-import re
-import skimage.io as io
-from tqdm import tqdm
-import torch
-import torchvision
-import tensorflow as tf
-import keras
-import keras.backend as K
-import sys
+We had last minute problems with the requirements.txt. If possible, we will provide it later.
 
-We will add a requirements.txt that will be runable, later to the repo, if possible . 
-
-To obtain the best result at AIcrowd, run, run.py
+To obtain the best result at AIcrowd, run run.py as:
+```bash
+python3 run.py arg
+```
+where arg can be one of the following:
+- msl4 --> for mean squared loss with 4 features
+- msl8 --> for mean squared loss with 8 features
+- msl16 --> for mean squared loss with 16 features
+- msl32 --> for mean squared loss with 32 features
+- focal --> for focal loss with 16 features
 
 ### File structure:
 The main folder should have the following structure:
@@ -46,8 +54,6 @@ The main folder should have the following structure:
   - weights/
     - model-unet-msl-black-8features.h5
      
-  - output
-    - submission_msl_black_8features.csv
 
   - run.py 
   - main_notebook.ipynb
@@ -61,4 +67,29 @@ The main folder should have the following structure:
   - data_prep.py
   - data_handling.py
   - requirements.txt
+
+  ```bash
+.
+├── data/
+│   ├── test_set_images/
+│   └── training/
+│
+├── weights/
+│
+├── README.md
+├── data_postprocessing.py
+├── save_output.py
+├── image_augmentation.py
+├── model.py
+├── loss_functions.py
+├── data_loading.py
+├── metrics.py
+├── data_prep.py
+├── data_handling.py
+├── requirements.txt
+├── run.py 
+├── main_notebook.ipynb
+├── nlp_pipeline.ipynb
+│ 
+```
 
