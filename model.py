@@ -1,5 +1,7 @@
 import torch
 import torchvision
+import tensorflow as tf
+
 """ Down Sample Class"""
 """ operations performed:
 1. 3x3 CONV (ReLU + Batch Normalization) 
@@ -10,43 +12,45 @@ Feature maps double as we go down the blocks, starting at 64, then 128, 256, and
 After 4 iterations, bottleneck (consists of 2 CONV layers with Batch Normalization & relu)
 """
 
-class DownSample(torch.nn.Module)
-    def __init__(self, in_channels, out_channels, conv_kernel=3, maxpool_kernel=2, maxpool_stride=2, dropout_p=0.1):
-      super().__init__()¨
+class DownSample:
+    def __init__(self, out_channels, conv_kernel=3, maxpool_kernel=2, maxpool_stride=2, dropout_p=0.1, padding="same"):
+      super().__init__()
 
       # first convolution + batch normalization
-      self.conv1 = torch.nn.Conv2d(in_channels, out_channels, kernel_size=conv_kernel)
-      self.batchnorm1 = torch.nn.BatchNorm2d(out_channels)
+      self.conv1 = tf.keras.layers.Conv2D(out_channels, conv_kernel, padding=padding)
+      self.batchnorm1 = tf.keras.layers.BatchNormalization()
 
       # second convolution + batch normalization
-      self.conv2 = torch.nn.Conv2d(out_channels, out_channels, kernel_size=conv_kernel)
-      self.batchnorm2 = torch.nn.BatchNorm2d(out_channels)
+      self.conv2 = tf.keras.layers.Conv2D(out_channels, conv_kernel, padding=padding)
+      self.batchnorm2 = tf.keras.layers.BatchNormalization()
 
       # maxpooling + dropout
-      self.maxpool = torch.nn.MaxPool2d(maxpool_kernel, stride=maxpool_stride)
-      self.dropout = torch.nn.Dropout2d(p=dropout_p)
+      self.maxpool = tf.keras.layers.MaxPooling2D((maxpool_kernel, maxpool_kernel), maxpool_stride)
+      self.dropout = tf.keras.layers.Dropout(dropout_p)
 
     # Method for down sample iteration
     # :param x: input tensor contraction phase
     # :param last: flag for bottleneck
     def forward(self, x, last=False):
-      # relu function
-      relu = torch.nn.functional.relu
       
       # normal case
-      if !last:
+      if not last:
         # conv 3x3, batchnorm, relu * 2
-        x = relu(self.batchnorm1(self.conv1(x)))
-        x = relu(self.batchnorm2(self.conv2(x)))
+        x = tf.keras.activations.relu((self.batchnorm1(self.conv1(x))))
+        x = tf.keras.activations.relu((self.batchnorm2(self.conv2(x))))
+        x_conv = x
         # max pool 2x2
         x = self.maxpool(x)
         x = self.dropout(x)
+
+        return x, x_conv
+        
       else:
         # bottleneck
-        x = relu(self.batchnorm1(self.conv1(x)))
-        x = relu(self.batchnorm2(self.conv2(x)))
+        x = tf.keras.activations.relu((self.batchnorm1(self.conv1(x))))
+        x = tf.keras.activations.relu((self.batchnorm2(self.conv2(x))))
 
-      return x
+        return x
 
 
 """ Up Sample Class """
@@ -59,96 +63,112 @@ class DownSample(torch.nn.Module)
 6. 3x3 CONV (ReLU + Batch Normalization)
 After 4 iterations, output convolution
 """
-class UpSample(torch.nn.Module) 
-    def __init__(self, in_channels, out_channels, conv_kernel=3, conv_transp_kernel=2, stride=2, dropout_p=0.1): 
+class UpSample:
+    def __init__(self, out_channels, conv_kernel=3, conv_transp_kernel=2, conv_output_kernel=1, dropout_p=0.1, conv_stride=(2,2), padding="same"): 
       super().__init__() 
  
       # transpose convolution
-      self.up = torch.nn.ConvTranspose2d(in_channels, out_channels, kernel_size=conv_transp_kernel) 
+      self.up = tf.keras.layers.Conv2DTranspose(out_channels, conv_transp_kernel, strides=conv_stride, padding=padding)
        
       # first convolution + batch normalization
-      self.conv1 = torch.nn.Conv2d(in_channels, out_channels, kernel_size=conv_kernel) 
-      self.batchnorm1 = torch.nn.BatchNorm2d(out_channels) 
- 
+      self.conv1 = tf.keras.layers.Conv2D(out_channels, conv_kernel, padding=padding)
+      self.batchnorm1 = tf.keras.layers.BatchNormalization()
+
       # second convolution + batch normalization
-      self.conv2 = torch.nn.Conv2d(out_channels, out_channels, kernel_size=conv_kernel) 
-      self.batchnorm2 = torch.nn.BatchNorm2d(out_channels) 
+      self.conv2 = tf.keras.layers.Conv2D(out_channels, conv_kernel, padding=padding)
+      self.batchnorm2 = tf.keras.layers.BatchNormalization()
  
       # dropout
-      self.dropout = torch.nn.Dropout2d(p=dropout_p) 
+      self.dropout = tf.keras.layers.Dropout(dropout_p)
+
+      # concate
+      self.concat = tf.keras.layers.Concatenate(axis=3)
+
+      # output convolution
+      self.out_conv = tf.keras.layers.Conv2D(out_channels, conv_output_kernel, activation='sigmoid')#, padding=padding
 
     # Method for up sample iteration
     # :param x: input tensor expantion phase
     # :param x_1: corresponding input tensor contraction phase
     # :param last: flag for output convolution
     def forward(self, x, x_1, last=False): 
-      # relu function
-      relu = torch.nn.functional.relu 
 
       # normal case
-      if !last:
+      if not last:
         x = self.up(x) 
         
         # copy and crop (padding + concatenation)
-        difference_width = x.size()[2] - x_1.size()[2]
-        difference_height = x.size()[3] - x_1.size()[3]
+        # difference_width = x.shape[2] - x_1.shape[2]
+        # difference_height = x.shape[3] - x_1.shape[3]
 
-        left_padding = difference_width // 2
-        right_padding = difference_width - left_padding
-        top_padding = difference_height // 2
-        bottom_padding = difference_height - top_padding
+        # left_padding = difference_width // 2
+        # right_padding = difference_width - left_padding
+        # top_padding = difference_height // 2
+        # bottom_padding = difference_height - top_padding
 
-        x = nn.functional.pad(x, [left_padding, right_padding, top_padding, bottom_padding])
-        x = torch.cat([x_1, x], dim=1)
+        # x = tf.pad(x, [[top_padding, bottom_padding], [left_padding, right_padding]])
+  
+        x = self.concat([x, x_1])
 
+        # dropout
         x = self.dropout(x) 
 
         # conv 3x3, batchnorm, relu * 2
-        x = relu(self.batchnorm1(self.conv1(x))) 
-        x = relu(self.batchnorm2(self.conv2(x))) 
+        x = tf.keras.activations.relu((self.batchnorm1(self.conv1(x))))
+        x = tf.keras.activations.relu((self.batchnorm2(self.conv2(x))))
        
       else:
         # output convolution case
-        x = self.conv1(x)
+        x = self.out_conv(x)
       
       return x 
  
-class Unet(torch.nn.Module) 
-    def __init__(self, n_channels, n_classes): 
+# n_filters is a hyperparameter and can be fine tuned
+class Unet:
+    def __init__(self, n_classes, n_filters): 
       super().__init__() 
 
       # 4 down sample operations
-      self.downSample1 = DownSample(n_channels, 64)
-      self.downSample2 = DownSample(64, 128)
-      self.downSample3 = DownSample(128, 256)
-      self.downSample4 = DownSample(256, 512)
+      #self.downSample1 = DownSample(64)
+      #self.downSample2 = DownSample(128)
+      #self.downSample3 = DownSample(256)
+      #self.downSample4 = DownSample(512)
+      self.downSample1 = DownSample(n_filters)
+      self.downSample2 = DownSample(n_filters * 2)
+      self.downSample3 = DownSample(n_filters * 4)
+      self.downSample4 = DownSample(n_filters * 8)
 
       # 1 bottleneck
-      self.bottleneck = DownSample(512, 1024)
+      #self.bottleneck = DownSample(1024)
+      self.bottleneck = DownSample(n_filters * 16)
 
       # 4 up sample operations
-      self.upSample1 = UpSample(1024, 512)
-      self.upSample2 = UpSample(512, 256)
-      self.upSample3 = UpSample(256, 128)
-      self.upSample4 = UpSample(128, 64)
+      #self.upSample1 = UpSample(512)
+      #self.upSample2 = UpSample(256)
+      #self.upSample3 = UpSample(128)
+      #self.upSample4 = UpSample(64)
+      self.upSample1 = UpSample(n_filters * 8)
+      self.upSample2 = UpSample(n_filters * 4)
+      self.upSample3 = UpSample(n_filters * 2)
+      self.upSample4 = UpSample(n_filters)
 
       # 1 output convolution
-      self.outConv = UpSample(64, n_classes)
+      self.outConv = UpSample(n_classes)
 
     def forward(self, x):
       # contraction phase
-      x_1 = self.downSample1(x)
-      x_2 = self.downSample2(x_1)
-      x_3 = self.downSample3(x_2)
-      x_4 = self.downSample4(x_3)
-      x_bottleneck = self.bottleneck(x_4)
+      x_1, x_1_conv = self.downSample1.forward(x)
+      x_2, x_2_conv = self.downSample2.forward(x_1)
+      x_3, x_3_conv = self.downSample3.forward(x_2)
+      x_4, x_4_conv = self.downSample4.forward(x_3)
+      x_bottleneck = self.bottleneck.forward(x_4, True)
 
       # expansion phase
-      x = self.upSample1(x_bottleneck, x_4)
-      x = self.upSample2(x, x_3)
-      x = self.upSample3(x, x_2)
-      x = self.upSample4(x, x_1)
-      x_output = self.outConv(x, [], True)
+      x = self.upSample1.forward(x_bottleneck, x_4_conv)
+      x = self.upSample2.forward(x, x_3_conv)
+      x = self.upSample3.forward(x, x_2_conv)
+      x = self.upSample4.forward(x, x_1_conv)
+      x_output = self.outConv.forward(x, [], True)
 
       return x_output
 

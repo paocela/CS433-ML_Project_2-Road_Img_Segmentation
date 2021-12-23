@@ -50,3 +50,21 @@ def undersample(train_data, train_labels):
   new_train_labels = train_labels[new_indices]
   return new_train_data, new_train_labels
 
+
+
+# Split in train and test set
+def train_test_split(train_data, train_labels, ratio, seed=1):
+    # set seed
+    np.random.seed(seed)
+    # generate random indices
+    num_row = len(train_data)
+    indices = np.random.permutation(num_row)
+    index_split = int(np.floor(ratio * num_row))
+    index_tr = indices[: index_split]
+    index_te = indices[index_split:]
+    # create split
+    tr_data = train_data[index_tr]
+    te_data = train_data[index_te]
+    tr_labels = train_labels[index_tr]
+    te_labels = train_labels[index_te]
+    return tr_data, tr_labels, te_data, te_labels

@@ -58,7 +58,7 @@ def img_crop(im, w, h):
                 im_patch = im[j:j+w, i:i+h]
             else:
                 im_patch = im[j:j+w, i:i+h, :]
-            list_patches.append(im_patch)
+            list_patches. append(im_patch)
     return list_patches
 
 

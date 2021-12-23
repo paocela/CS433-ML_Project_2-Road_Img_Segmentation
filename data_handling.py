@@ -84,4 +84,8 @@ def label_to_img(imgwidth, imgheight, w, h, labels):
                 l = 1
             array_labels[j:j+w, i:i+h] = l
             idx = idx + 1
+
     return array_labels
+
+
+    
