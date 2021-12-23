@@ -16,19 +16,25 @@ weights_prefix = "/Weights/model-unet-"
 """Load and predict testset data"""
 def main(argv):
 
-  # TODO: complete it
   # use requested loss function
-  if argv[1] == "-msl":
+  if argv[1] == "-msl4":
     loss = tf.keras.losses.MeanSquaredLogarithmicError
-    weights_path = weights_prefix + "MSL" + ".h5"
+    weights_path = weights_prefix + "MSL-black-4features" + ".h5"
+  elif argv[1] == "-msl8":
+    loss = tf.keras.losses.MeanSquaredLogarithmicError
+    weights_path = weights_prefix + "MSL-black-8features" + ".h5"
+  elif argv[1] == "-msl16":
+    loss = tf.keras.losses.MeanSquaredLogarithmicError
+    weights_path = weights_prefix + "MSL-black-16features" + ".h5"
+  elif argv[1] == "-msl8":
+    loss = tf.keras.losses.MeanSquaredLogarithmicError
+    weights_path = weights_prefix + "MSL-black-32features" + ".h5"
   elif argv[1] == "-focal":
     loss = FocalLoss
     weights_path = weights_prefix + "focal" + ".h5"
-  elif argv[1] == "-bce":
-    loss = 
-    weights_path = weights_prefix + "BCE" + ".h5"
+
   else:
-    raise Exception("please use as argument only the following: -msl, -focal, -bce")
+    raise Exception("please use as argument only the following: -msl4, -msl8, -msl16, -msl32, -focal")
 
   # Extract test data into numpy arrays.
   print("loading test data...")
@@ -64,8 +70,8 @@ def main(argv):
   pred_testset = model_predict(model, testset_data, new_size)
 
   # save predictions to output file
-  print("saving predictions...")
-  masks_to_submission_outer('Output/submission_MSL.csv', pred_testset)
+  print("saving predictions in submission.csv...")
+  masks_to_submission_outer('Output/submission.csv', pred_testset)
 
   print("Done!")
 
