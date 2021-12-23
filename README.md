@@ -45,29 +45,6 @@ where arg can be one of the following:
 ### File structure:
 The main folder should have the following structure:
 
-```
--- main_folder/
-	- data/
-		- test_set_images/
-		- training/
-    
-  - weights/
-    - model-unet-msl-black-8features.h5
-     
-
-  - run.py 
-  - main_notebook.ipynb
-  - data_postprocessing.py
-  - save_output.py
-  - image_augmentation.py
-  - model.py
-  - loss_functions.py
-  - data_loading.py
-  - metrics.py
-  - data_prep.py
-  - data_handling.py
-  - requirements.txt
-
   ```bash
 .
 ├── data/
@@ -89,7 +66,7 @@ The main folder should have the following structure:
 ├── requirements.txt
 ├── run.py 
 ├── main_notebook.ipynb
-├── nlp_pipeline.ipynb
-│ 
 ```
+
+File names are self-explanatory, but a detailed explanation is found inside
 
